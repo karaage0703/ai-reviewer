@@ -1,0 +1,4 @@
+export OPENAI_API_KEY=your_openai_api_key
+export GITHUB_TOKEN=your_github_token
+export GITHUB_REPOSITORY=your_github_repository
+export PULL_REQUEST_NUMBER=your_pull_request_number
