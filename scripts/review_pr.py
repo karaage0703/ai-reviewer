@@ -2,7 +2,7 @@ import os
 from openai import OpenAI
 import requests
 import json
-
+from system_prompt import reviewer_prompt
 
 def get_pr_diff():
     """Retrieve the diff of the specified pull request.
@@ -64,12 +64,12 @@ def review_diff(diff):
     client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
     response = client.chat.completions.create(
-        model="gpt-4o",
+        model="gpt-4o-mini-2024-07-18",
         messages=[
-            {"role": "system", "content": "You are a code review assistant."},
+            {"role": "system", "content": reviewer_prompt },
             {"role": "user", "content": f"Please review the following pull request diff in Japanese:\n\n{diff}"}
         ],
-        max_tokens=1024
+        max_tokens=16384
     )
 
     return response.choices[0].message.content
