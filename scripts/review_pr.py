@@ -103,7 +103,7 @@ def post_review_comments(comments, file_path):
         "commit_id" : last_commit,
         "path": file_path,
         "side": "RIGHT",
-        "line": 1  # Assuming we always post comment on the first line of the diff for simplicity.
+        "subject_type": "file"
     }
 
     response = requests.post(comments_url, headers=headers, data=json.dumps(data))
