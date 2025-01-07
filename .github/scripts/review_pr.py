@@ -4,21 +4,19 @@ import requests
 import json
 from system_prompt import reviewer_prompt
 
+
 def get_pr_diff():
     """Retrieve the diff of the specified pull request.
 
     Returns:
         dict: The diff of the pull request by file.
     """
-    repo = os.getenv('GITHUB_REPOSITORY')
-    pr_number = os.getenv('PULL_REQUEST_NUMBER')
-    token = os.getenv('GITHUB_TOKEN')
+    repo = os.getenv("GITHUB_REPOSITORY")
+    pr_number = os.getenv("PULL_REQUEST_NUMBER")
+    token = os.getenv("GITHUB_TOKEN")
     diff_url = f"https://api.github.com/repos/{repo}/pulls/{pr_number}"
 
-    headers = {
-        "Authorization": f"token {token}",
-        "Accept": "application/vnd.github.v3.diff"
-    }
+    headers = {"Authorization": f"token {token}", "Accept": "application/vnd.github.v3.diff"}
 
     response = requests.get(diff_url, headers=headers)
     response.raise_for_status()
@@ -39,15 +37,15 @@ def split_diff_by_file(diff):
     files_diff = {}
     current_file = None
     for line in diff.splitlines():
-        if line.startswith('diff --git'):
-            current_file = line.split(' b/')[-1]
+        if line.startswith("diff --git"):
+            current_file = line.split(" b/")[-1]
             files_diff[current_file] = []
         if current_file:
             files_diff[current_file].append(line)
 
     # Convert list of lines back to single string
     for file in files_diff:
-        files_diff[file] = '\n'.join(files_diff[file])
+        files_diff[file] = "\n".join(files_diff[file])
 
     return files_diff
 
@@ -66,10 +64,10 @@ def review_diff(diff):
     response = client.chat.completions.create(
         model="gpt-4o-mini-2024-07-18",
         messages=[
-            {"role": "system", "content": reviewer_prompt },
-            {"role": "user", "content": f"Please review the following pull request diff in Japanese:\n\n{diff}"}
+            {"role": "system", "content": reviewer_prompt},
+            {"role": "user", "content": f"Please review the following pull request diff in Japanese:\n\n{diff}"},
         ],
-        max_tokens=16384
+        max_tokens=16384,
     )
 
     return response.choices[0].message.content
@@ -82,29 +80,22 @@ def post_review_comments(comments, file_path):
         comments (str): The review comments.
         file_path (str): The path of the file being reviewed.
     """
-    repo = os.getenv('GITHUB_REPOSITORY')
-    pr_number = os.getenv('PULL_REQUEST_NUMBER')
-    token = os.getenv('GITHUB_TOKEN')
+    repo = os.getenv("GITHUB_REPOSITORY")
+    pr_number = os.getenv("PULL_REQUEST_NUMBER")
+    token = os.getenv("GITHUB_TOKEN")
 
     comments_url = f"https://api.github.com/repos/{repo}/pulls/{pr_number}/comments"
     commit_url = f"https://api.github.com/repos/{repo}/pulls/{pr_number}/commits"
 
-    headers = {
-        "Authorization": f"token {token}",
-        "Accept": "application/vnd.github.v3+json"
-    }
+    headers = {"Authorization": f"token {token}", "Accept": "application/vnd.github.v3+json"}
 
     pr_commits_response = requests.get(commit_url, headers=headers)
     pr_commits = pr_commits_response.json()
-    last_commit = pr_commits[-1]['sha']
+    last_commit = pr_commits[-1]["sha"]
 
-    data = {
-        "body": comments,
-        "commit_id" : last_commit,
-        "path": file_path,
-        "side": "RIGHT",
-        "subject_type": "file"
-    }
+    comments = f"<details>\n\n<summary>コードレビューだっぱい。</summary>\n\n{comments}\n\n</details>"
+
+    data = {"body": comments, "commit_id": last_commit, "path": file_path, "side": "RIGHT", "subject_type": "file"}
 
     response = requests.post(comments_url, headers=headers, data=json.dumps(data))
     response.raise_for_status()
